@@ -66,6 +66,7 @@ static const struct
   {".tcc", "c++-header"},
   {".TCC", "c++-header"},
   {".cu", "cu"},
+  {".bsv", "bluespec"},
   {nullptr, nullptr},
 };
 
@@ -92,6 +93,7 @@ static const struct
   {"objective-c++-cpp-output", "objective-c++-cpp-output"},
   {"assembler-with-cpp", "assembler"},
   {"assembler", "assembler"},
+  {"bluespec", "bluespec"},
   {nullptr, nullptr},
 };
 

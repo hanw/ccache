@@ -409,6 +409,8 @@ guess_compiler(const char* path)
     result = GuessedCompiler::nvcc;
   } else if (name == "pump" || name == "distcc-pump") {
     result = GuessedCompiler::pump;
+  } else if (name == "bsc") {
+    result = GuessedCompiler::bsc;
   }
   return result;
 }
@@ -2926,7 +2928,8 @@ process_args(Context& ctx,
     return STATS_CANTUSEPCH;
   }
 
-  if (!found_c_opt && !found_dc_opt && !found_S_opt) {
+  if (!found_c_opt && !found_dc_opt && !found_S_opt &&
+          ctx.guessed_compiler != GuessedCompiler::bsc) {
     if (args_info.output_is_precompiled_header) {
       args_add(common_args, "-c");
     } else {
@@ -2975,8 +2978,13 @@ process_args(Context& ctx,
   if (args_info.output_obj.empty()) {
     if (args_info.output_is_precompiled_header) {
       args_info.output_obj = args_info.input_file + ".gch";
+    } else if (ctx.guessed_compiler == GuessedCompiler::bsc) {
+      string_view extension = ".bo";
+      args_info.output_obj = Util::change_extension(
+        Util::base_name(args_info.input_file), extension);
     } else {
-      string_view extension = found_S_opt ? ".s" : ".o";
+      string_view extension =
+          found_S_opt ? ".s" : ".o";
       args_info.output_obj = Util::change_extension(
         Util::base_name(args_info.input_file), extension);
     }
