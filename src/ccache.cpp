@@ -1042,8 +1042,15 @@ to_cache(Context& ctx,
          Args& depend_extra_args,
          struct hash* depend_mode_hash)
 {
-  args_add(args, "-o");
-  args_add(args, ctx.args_info.output_obj.c_str());
+  if (ctx.guessed_compiler != GuessedCompiler::bsc) {
+      args_add(args, "-o");
+      args_add(args, ctx.args_info.output_obj.c_str());
+  }
+
+  if (ctx.guessed_compiler == GuessedCompiler::bsc) {
+      args_add(args, "-bdir");
+      args_add(args, ctx.args_info.output_bdir.c_str());
+  }
 
   if (ctx.config.hard_link() && ctx.args_info.output_obj != "/dev/null") {
     // Workaround for Clang bug where it overwrites an existing object file
@@ -2992,8 +2999,12 @@ process_args(Context& ctx,
       args_info.output_obj = args_info.input_file + ".gch";
     } else if (ctx.guessed_compiler == GuessedCompiler::bsc) {
       string_view extension = ".bo";
-      args_info.output_obj = args_info.output_bdir + "/" +
-          Util::change_extension(Util::base_name(args_info.input_file), extension);
+      args_info.output_obj = Util::change_extension(
+              Util::base_name(args_info.input_file), extension);
+      if (!ctx.args_info.output_bdir.empty()) {
+        args_info.output_obj =
+            fmt::format("{}/{}", args_info.output_bdir, args_info.output_obj);
+      }
     } else {
       string_view extension =
           found_S_opt ? ".s" : ".o";
