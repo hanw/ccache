@@ -33,6 +33,9 @@ struct ArgsInfo
   // The output file being compiled to.
   std::string output_obj;
 
+  // The path to the output objects (used by bsc -bdir)
+  std::string output_bdir;
+
   // The path to the dependency file (implicit or specified with -MF).
   std::string output_dep;
 

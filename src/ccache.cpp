@@ -1130,7 +1130,8 @@ to_cache(Context& ctx,
 
   // distcc-pump outputs lines like this:
   // __________Using # distcc servers in pump mode
-  if (st.size() != 0 && ctx.guessed_compiler != GuessedCompiler::pump) {
+  if (st.size() != 0 && ctx.guessed_compiler != GuessedCompiler::pump
+          && ctx.guessed_compiler != GuessedCompiler::bsc) {
     cc_log("Compiler produced stdout");
     tmp_unlink(tmp_stdout);
     tmp_unlink(tmp_stderr);
@@ -1211,6 +1212,7 @@ to_cache(Context& ctx,
     use_relative_paths_in_depfile(ctx);
   }
 
+  cc_log("output object %s", ctx.args_info.output_obj.c_str());
   st = Stat::stat(ctx.args_info.output_obj);
   if (!st) {
     cc_log("Compiler didn't produce an object file");
@@ -2363,6 +2365,16 @@ process_args(Context& ctx,
       continue;
     }
 
+    if (str_eq(argv[i], "-bdir")) {
+      if (i == argc - 1) {
+        cc_log("Missing argument to %s", argv[i]);
+        return STATS_ARGS;
+      }
+      args_info.output_bdir = make_relative_path(ctx, argv[i + 1]);
+      i++;
+      continue;
+    }
+
     // Alternate form of -o with no space. Nvcc does not support this.
     if (str_startswith(argv[i], "-o")
         && ctx.guessed_compiler != GuessedCompiler::nvcc) {
@@ -2980,8 +2992,8 @@ process_args(Context& ctx,
       args_info.output_obj = args_info.input_file + ".gch";
     } else if (ctx.guessed_compiler == GuessedCompiler::bsc) {
       string_view extension = ".bo";
-      args_info.output_obj = Util::change_extension(
-        Util::base_name(args_info.input_file), extension);
+      args_info.output_obj = args_info.output_bdir + "/" +
+          Util::change_extension(Util::base_name(args_info.input_file), extension);
     } else {
       string_view extension =
           found_S_opt ? ".s" : ".o";
@@ -3659,6 +3671,7 @@ do_cache_compilation(Context& ctx, const char* const* argv)
   struct hash* depend_mode_hash =
     ctx.config.depend_mode() ? direct_hash : nullptr;
 
+  cc_log("to_cache");
   // Run real compiler, sending output to cache.
   MTR_BEGIN("cache", "to_cache");
   to_cache(
